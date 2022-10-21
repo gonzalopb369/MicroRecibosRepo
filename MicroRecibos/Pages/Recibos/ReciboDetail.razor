@@ -1,0 +1,167 @@
+﻿@page "/recibodetail"
+
+@inject IReciboApiClient reciboApiClient
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+<h3>Recibo</h3>
+
+@if (oRecibo == null)
+{
+    <p><em>Cargando...</em></p>
+}
+else
+{
+    <RadzenTemplateForm TItem="Recibo" Data=@oRecibo Submit=@Grabar>
+        <FluentValidationValidator />
+        <ValidationSummary />
+
+        <div class="row">
+            <div class="col-10">
+                <RadzenFieldset Text="Datos de Recibo">
+                    <div class="row">
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Nro. Recibo" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenNumeric @bind-Value="@oRecibo.NroRecibo" Name="NroRecibo" style="width: 100%;" />
+                        </div>
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Fecha de Pago" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenDatePicker @bind-Value="@oRecibo.FechaPago" DateFormat="d" Class="w-100" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Nombre del pasajero" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenTextBox Name="NombPasajero" @bind-Value="@oRecibo.NombrePasajero" style="width: 100%;" />
+                            <ValidationMessage For="@(() => oRecibo.NombrePasajero)" />
+                        </div>
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Código de reserva" />
+                        </div>
+                        <div class="col-md-3">
+                            <!--
+                            <RadzenText Name="CodReserva" @bind-Value="@oRecibo.CodigoReserva" style="width: 100%;" />
+                            -->
+                            <input type="text" @bind="@oRecibo.CodigoReserva" style="width: 100%;" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Concepto" />
+                        </div>
+                        <div class="col-md-9">
+                            <RadzenTextBox Name="Concepto" @bind-Value="@oRecibo.Concepto" style="width: 100%;" />
+                            <ValidationMessage For="@(() => oRecibo.Concepto)" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Monto total" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenNumeric @bind-Value="@oRecibo.MontoTotal" Name="MontoTotal" style="width: 100%;" />
+                            <ValidationMessage For="@(() => oRecibo.MontoTotal)" />
+                        </div>
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Monto pagado" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenNumeric @bind-Value="@oRecibo.ACuenta" Name="ACuenta" style="width: 100%;" />
+                            <ValidationMessage For="@(() => oRecibo.ACuenta)" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Saldo" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenNumeric @bind-Value="@oRecibo.Saldo" Name="Saldo" style="width: 100%;" />
+                            <ValidationMessage For="@(() => oRecibo.Saldo)" />
+                        </div>
+                        <div class="col-md-3 align-items-center d-flex">
+                            <RadzenLabel Text="Estado" />
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenNumeric @bind-Value="@oRecibo.Estado" Name="Estado" style="width: 100%;" />
+                        </div>
+                    </div>
+
+                </RadzenFieldset>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-12 d-flex align-items-end justify-content-center" style="margin-top: 16px;">
+                <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Grabar" />
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="cancel" style="display: inline-block; margin-left: 10px;" Text="Cancelar" Click="@NavigateHome" />
+            </div>
+        </div>
+    </RadzenTemplateForm>
+}
+
+
+@code {
+    [Parameter]
+    public Pago OPago { get; set; }
+    
+    public Recibo oRecibo;
+
+    
+    protected override async Task OnInitializedAsync()
+    {        
+        oRecibo = new Recibo()
+            {
+                //Id = OPago.
+                //NroRecibo = OPago.
+                FechaPago = OPago.Date,
+                NombrePasajero = OPago.NombPasajero,
+                CodigoReserva = OPago.Booking,
+                Concepto = "Adelanto por pasaje, Nro. reserva " + OPago.ReservationNumber.Trim(),
+                MontoTotal = OPago.originalValue,
+                ACuenta = OPago.Amount,
+                Saldo = OPago.currentValue,
+                Estado = 3
+            };
+    }
+
+
+    protected async Task Grabar()
+    {
+        Guid IdRecibo = await reciboApiClient.GrabarRecibo(oRecibo);
+        if (IdRecibo == Guid.Empty)
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error al grabar recibo",
+                    Detail = "Se produjo un error al grabar el Recibo",
+                    Duration = 4000
+                });
+        else
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Recibo grabado!",
+                    Detail = "El recibo se grabó exitosamente!",
+                    Duration = 4000
+                });
+        NavigateHome();
+    }
+
+
+    private void NavigateHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+        Console.WriteLine($"{message.Severity} notification");
+    }
+}
