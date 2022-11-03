@@ -4,6 +4,8 @@
 @inject IPagoApiClient pagoApiClient
 @inject NavigationManager navigationManager
 @inject NotificationService NotificationService
+@inject DialogService DialogService
+
 
 <h3>Lista de Recibos</h3>
 
@@ -12,7 +14,7 @@
 @if (_isVisible)
 {
     <div>
-        <ReciboDetail OPago="pagoNuevo"/>
+        <ReciboDetail OPago="pagoNuevo" />
     </div>
 }
 
@@ -48,12 +50,14 @@ else
             <RadzenGridColumn TItem="Recibo" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="50px">
                 <Template Context="data">
                     <RadzenLink Path=@($"/recibodetail/{data.Id}")
-                            Icon="print" Size="ButtonSize.md" @onclick:stopPropagation="true" />
+                            Icon="print" Size="ButtonSize.Medium" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenGridColumn>
             <RadzenGridColumn TItem="Recibo" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="50px">
                 <Template Context="data">
-                    <RadzenLink Path=@($"/reciboelimina/{data.Id}") Icon="delete" Size="ButtonSize.Large" @onclick:stopPropagation="true" />
+                    <RadzenButton Text="Elimina" Icon="delete" Size="ButtonSize.Small"
+                              Click="@((args) => EliminarReciboButtonClick(data.Id))"
+                              @onclick:stopPropagation="true" />
                 </Template>
             </RadzenGridColumn>
 
@@ -61,6 +65,7 @@ else
     </RadzenGrid>
 
 }
+
 
 @code {
     List<Recibo> oRecibos;
@@ -98,6 +103,32 @@ else
         }
         _isVisible = !_isVisible;
         //navigationManager.NavigateTo($"/recibodetail");
+    }
+
+
+
+    protected async System.Threading.Tasks.Task EliminarReciboButtonClick(Guid clientId)
+    {        
+        var confirmResult = await DialogService.Confirm("Está seguro@ de eliminar el Recibo?", "ELIMINAR");
+        if (confirmResult.HasValue && confirmResult.Value)
+        {
+            try
+            {
+                await reciboApiClient.EliminarRecibo(clientId);
+                ShowNotification(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Recibo eliminado!",
+                        Detail = "El recibo se eliminó exitosamente!",
+                        Duration = 4000
+                    });
+            }
+            catch (System.Exception exception)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, $"Error",
+                    $"Error al eliminar recibo", duration: -1);
+            }
+        }
     }
 
 

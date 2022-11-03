@@ -1,4 +1,4 @@
-﻿using MicroRecibos.Modelos;
+using MicroRecibos.Modelos;
 using System.Net.Http.Json;
 
 
@@ -40,10 +40,13 @@ namespace MicroRecibos.Servicios
         }
 
 
-        public Task<bool> EliminarRecibo(Guid Id)
+        public async Task<bool> EliminarRecibo(Guid Id)
         {
-            throw new NotImplementedException(); //!!!
-        }      
+			var response = await _httpClient.DeleteAsync($"api/ControlRecibo/{Id}");
+			if (response.IsSuccessStatusCode)
+				return true;
+			return false;
+		}      
 
     }
 }
